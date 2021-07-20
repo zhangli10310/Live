@@ -1,0 +1,3 @@
+rootProject.name = "Live"
+include ':app'
+include ':glnative'
