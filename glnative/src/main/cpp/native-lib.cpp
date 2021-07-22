@@ -23,4 +23,5 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_zl_glnative_GLRenderer_stop(JNIEnv *env, jobject thiz) {
     render->destroy();
+    delete render;
 }

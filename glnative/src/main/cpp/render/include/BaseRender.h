@@ -8,13 +8,20 @@
 #include "GLES2/gl2.h"
 #include "EglWrapper.h"
 #include <thread>
+#include "BlockQueue.h"
 
+enum Operation { INIT };
 class BaseRender {
 
 private:
-    pthread_t thread;
-    bool threadRun;
     EglWrapper *eglWrapper;
+
+    BlockQueue<Operation> *queue;
+    std::atomic<bool> threadRun;
+    std::atomic<bool> threadExit;
+    void run();
+
+    void _init();
 
 protected:
     void printGLString(const char *name, GLenum s);
@@ -38,6 +45,7 @@ public:
     void init(ANativeWindow *window);
     void reset(int width, int height);
     void destroy();
+    ~BaseRender();
 };
 
 #endif //LIVE_BASERENDER_H

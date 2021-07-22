@@ -5,7 +5,7 @@ project("live")
 
 file(GLOB_RECURSE ALL_SOURCE */*.cpp *.cpp)
 
-include_directories(include render/include egl)
+include_directories(include render/include utils/include egl)
 
 add_library(
         native-lib

@@ -87,15 +87,34 @@ GLuint BaseRender::createProgram(const char *pVertexSource, const char *pFragmen
 
 BaseRender::BaseRender() {
     eglWrapper = NULL;
-    threadRun = true;
-//    int ret = pthread_create(&thread, NULL, run, NULL);
-//    if (ret != 0) {
-//        LOGE("create thread error: %d", ret);
-//    }
+    queue = new BlockQueue<Operation>();
+    threadRun.store(true);
+    threadExit.store(false);
+    auto lambda_fun = [&]() -> void {
+        while (threadRun) {
+            this->run();
+        }
+        threadExit.store(true);
+    };
+    std::thread t(lambda_fun);
+    t.detach();
 }
+
+BaseRender::~BaseRender() {
+    threadRun.store(false);
+    while (!threadExit);
+    delete queue;
+    LOGI("release render");
+}
+
+void BaseRender::run() {
+    LOGI("thread run");
+}
+
 
 void BaseRender::init(ANativeWindow *window) {
     LOGI("render init");
+
     if (eglWrapper == NULL) {
         eglWrapper = new EglWrapper();
     }
@@ -118,8 +137,7 @@ void BaseRender::destroy() {
     LOGI("render destroy");
     if (eglWrapper != NULL) {
         eglWrapper->destroy();
-        eglWrapper = NULL;
+        delete eglWrapper;
     }
     onDestroy();
-    threadRun = false;
 }
