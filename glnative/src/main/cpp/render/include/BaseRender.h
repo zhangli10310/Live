@@ -10,18 +10,17 @@
 #include <thread>
 #include "BlockQueue.h"
 
-enum Operation { INIT };
+
 class BaseRender {
 
 private:
     EglWrapper *eglWrapper;
 
-    BlockQueue<Operation> *queue;
+    BlockQueue<std::function<void()>> *queue;
     std::atomic<bool> threadRun;
     std::atomic<bool> threadExit;
-    void run();
 
-    void _init();
+    void run();
 
 protected:
     void printGLString(const char *name, GLenum s);
@@ -42,9 +41,15 @@ protected:
 
 public:
     BaseRender();
+
     void init(ANativeWindow *window);
+
     void reset(int width, int height);
+
+    void draw();
+
     void destroy();
+
     ~BaseRender();
 };
 

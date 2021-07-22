@@ -7,6 +7,8 @@ import android.view.Surface
  */
 class GLRenderer {
 
+    var render: Long = 0
+
     init {
         System.loadLibrary("native-lib")
     }
@@ -16,4 +18,6 @@ class GLRenderer {
     external fun reset(width: Int, height: Int)
 
     external fun stop()
+
+    protected external fun finalize()
 }

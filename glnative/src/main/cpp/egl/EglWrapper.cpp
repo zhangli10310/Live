@@ -7,6 +7,7 @@
 
 void EglWrapper::init(ANativeWindow *window) {
     nativeWindow = window;
+    LOGI("egl start init");
     display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (display == EGL_NO_DISPLAY) {
         LOGE("no display");

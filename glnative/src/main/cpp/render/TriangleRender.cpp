@@ -3,6 +3,7 @@
 //
 
 #include "TriangleRender.h"
+#include "android_log.h"
 
 auto gVertexShader =
         "attribute vec4 vPosition;\n"
@@ -51,5 +52,5 @@ void TriangleRender::onDraw() {
 }
 
 void TriangleRender::onDestroy() {
-
+    LOGD("onDestroy");
 }
