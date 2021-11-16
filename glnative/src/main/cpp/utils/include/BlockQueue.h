@@ -14,26 +14,37 @@ using namespace std;
 template<typename T>
 class BlockQueue {
 public:
-    BlockQueue() {}
+    BlockQueue() {
+        quited = false;
+    }
 
     ~BlockQueue() {}
 
     void put(const T &x) {
         unique_lock<mutex> guard(m_mutex);
+        if (quited) {
+            return;
+        }
         m_queue.push_back(x);
         m_cond.notify_all();
     }
 
     void put(T &&x) {
         unique_lock<mutex> guard(m_mutex);
+        if (quited) {
+            return;
+        }
         m_queue.push_back(move(x));
         m_cond.notify_all();
     }
 
     T take() {
         unique_lock<mutex> guard(m_mutex);
-        while (m_queue.size() == 0)
+        while (m_queue.size() == 0 && !quited)
             m_cond.wait(guard);
+        if (quited) {
+            return NULL;
+        }
         T front(move(m_queue.front()));
         m_queue.pop_front();
         return move(front);
@@ -44,7 +55,19 @@ public:
         return m_queue.size();
     }
 
+    void quit() {
+        unique_lock<mutex> guard(m_mutex);
+        quited = true;
+        m_queue.clear();
+        m_cond.notify_all();
+    }
+
+    bool isQuit() {
+        return quited;
+    }
+
 private:
+    bool quited;
     mutable mutex m_mutex;
     condition_variable m_cond;
     list<T> m_queue;

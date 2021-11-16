@@ -27,6 +27,7 @@ void TriangleRender::onSizeChange(int width, int height) {
 }
 
 void TriangleRender::onDraw() {
+    LOGI("onDraw");
     static float grey;
     grey += 0.01f;
     if (grey > 1.0f) {

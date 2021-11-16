@@ -7,7 +7,8 @@ import android.view.Surface
  */
 class GLRenderer {
 
-    var render: Long = 0
+    // called by native code
+    var renderPtr: Long = 0
 
     init {
         System.loadLibrary("native-lib")

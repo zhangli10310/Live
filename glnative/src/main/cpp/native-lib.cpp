@@ -5,14 +5,14 @@
 
 TriangleRender *getRender(JNIEnv *env, jobject thiz) {
     jclass clazz = env->GetObjectClass(thiz);
-    jfieldID fid = env->GetFieldID(clazz, "render", "J");
+    jfieldID fid = env->GetFieldID(clazz, "renderPtr", "J");
     jlong p = env->GetLongField(thiz, fid);
     return (TriangleRender *) p;
 }
 
 void setRender(JNIEnv *env, jobject thiz, const TriangleRender *render) {
     jclass clazz = env->GetObjectClass(thiz);
-    jfieldID fid = env->GetFieldID(clazz, "render", "J");
+    jfieldID fid = env->GetFieldID(clazz, "renderPtr", "J");
     env->SetLongField(thiz, fid, (jlong) render);
 }
 
@@ -21,8 +21,8 @@ JNIEXPORT void JNICALL
 Java_com_zl_glnative_GLRenderer_init(JNIEnv *env, jobject thiz, jobject surface) {
     LOGD("jni init");
     ANativeWindow *nwin = ANativeWindow_fromSurface(env, surface);
-    TriangleRender *render = new TriangleRender();
-    LOGI("set render %d", render);
+    auto *render = new TriangleRender();
+    LOGI("set render %ld", render);
     setRender(env, thiz, render);
     render->init(nwin);
 }
@@ -48,9 +48,9 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_zl_glnative_GLRenderer_finalize(JNIEnv *env, jobject thiz) {
     TriangleRender* render = getRender(env, thiz);
-    if (render != NULL) {
+    if (render != nullptr) {
         delete render;
-        render = NULL;
+        render = nullptr;
         setRender(env, thiz, render);
     }
 }

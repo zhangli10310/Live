@@ -86,7 +86,7 @@ GLuint BaseRender::createProgram(const char *pVertexSource, const char *pFragmen
 }
 
 BaseRender::BaseRender() {
-    eglWrapper = NULL;
+    eglWrapper = nullptr;
     queue = new BlockQueue<function<void()>>();
     threadRun.store(true);
     threadExit.store(false);
@@ -105,7 +105,7 @@ BaseRender::~BaseRender() {
     LOGI("release render");
     threadRun.store(false);
     queue->put([] {}); // push 一个空消息解除阻塞
-    while (!threadExit);
+    while (!threadExit && !queue->isQuit());
     delete queue;
     LOGI("render released");
 }
@@ -113,7 +113,9 @@ BaseRender::~BaseRender() {
 void BaseRender::run() {
     LOGD("try take message");
     function<void()> func = queue->take();
-    func();
+    if (func != nullptr) {
+        func();
+    }
 }
 
 
@@ -132,15 +134,18 @@ void BaseRender::init(ANativeWindow *window) {
             onInit();
             reset(eglWrapper->surfaceWidth, eglWrapper->surfaceHeight);
         }
-//        onDraw();
-//        eglWrapper->swapBuffers();
+        onDraw();
+        eglWrapper->swapBuffers();
     };
     queue->put(lambda);
 }
 
 void BaseRender::reset(int width, int height) {
+    if (width == eglWrapper->surfaceWidth && height == eglWrapper->surfaceHeight) {
+        return;
+    }
     LOGI("render reset size");
-    function<void()> lambda = [=] {
+    function<void()> lambda = [&] {
         LOGI("onSizeChange lambda width=%d,height=%d", width, height);
         onSizeChange(width, height);
     };
@@ -151,14 +156,23 @@ void BaseRender::draw() {
     LOGI("render reset size");
     function<void()> lambda = [=] {
         onDraw();
-        eglWrapper->swapBuffers();
+        EGLint ret = eglWrapper->swapBuffers();
+        switch (ret) {
+            case EGL_SUCCESS:
+                break;
+            case EGL_CONTEXT_LOST:
+                break;
+            default:
+                break;
+        }
+        queue->put(lambda);
     };
     queue->put(lambda);
 }
 
 void BaseRender::destroy() {
     LOGI("render destroy");
-    function<void()> lambda = [=] {
+    function<void()> lambda = [&] {
         LOGI("lambda destroy");
         if (eglWrapper != nullptr) {
             eglWrapper->destroy();
@@ -166,6 +180,7 @@ void BaseRender::destroy() {
             eglWrapper = nullptr;
         }
         onDestroy();
+        queue->quit();
     };
-    queue->put(lambda);
+//    queue->put(lambda);
 }

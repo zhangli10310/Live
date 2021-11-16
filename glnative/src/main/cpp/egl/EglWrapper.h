@@ -12,7 +12,7 @@
 
 class EglWrapper {
 private:
-    ANativeWindow* nativeWindow;
+//    ANativeWindow* nativeWindow;
     EGLDisplay display;
     EGLSurface eglSurface;
     EGLContext eglContext;
@@ -28,7 +28,7 @@ private:
 public:
     EGLint surfaceWidth, surfaceHeight;
     void init(ANativeWindow* window);
-    void swapBuffers();
+    EGLint swapBuffers();
     void destroy();
 
     bool isInit() {

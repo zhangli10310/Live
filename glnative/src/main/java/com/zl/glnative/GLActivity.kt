@@ -4,13 +4,16 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.SurfaceTexture
 import android.opengl.GLSurfaceView
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.util.Log
+import android.view.Surface
 import android.view.SurfaceHolder
+import android.view.TextureView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.zl.glnative.databinding.ActivityGlBinding
@@ -38,20 +41,6 @@ class GLActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val renderer = GLRenderer()
-//        binding.surfaceView.setRenderer(object : GLSurfaceView.Renderer {
-//            override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-//                renderer.init()
-//            }
-//
-//            override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-//
-//            }
-//
-//            override fun onDrawFrame(gl: GL10?) {
-//
-//            }
-//
-//        })
         binding.surfaceView.setOnClickListener {
             Log.i(TAG, "onCreate: ")
 
@@ -59,6 +48,7 @@ class GLActivity : AppCompatActivity() {
 
         binding.surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(holder: SurfaceHolder) {
+                Log.i(TAG, "surfaceCreated: ")
                 renderer.init(holder.surface)
             }
 
@@ -68,14 +58,56 @@ class GLActivity : AppCompatActivity() {
                 width: Int,
                 height: Int
             ) {
+                Log.i(TAG, "surfaceChanged: ")
                 renderer.reset(width, height)
             }
 
             override fun surfaceDestroyed(holder: SurfaceHolder) {
+                Log.i(TAG, "surfaceDestroyed: ")
                 renderer.stop()
             }
 
         })
+
+        val textureRender = GLRenderer()
+        binding.textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+
+            private var thisSurface: SurfaceTexture? = null
+
+            override fun onSurfaceTextureAvailable(
+                surface: SurfaceTexture,
+                width: Int,
+                height: Int
+            ) {
+                Log.i(TAG, "onSurfaceTextureAvailable: $surface")
+                thisSurface = surface
+                textureRender.init(Surface(surface))
+            }
+
+            override fun onSurfaceTextureSizeChanged(
+                surface: SurfaceTexture,
+                width: Int,
+                height: Int
+            ) {
+                Log.i(TAG, "onSurfaceTextureSizeChanged: ")
+                textureRender.reset(width, height)
+            }
+
+            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                Log.i(TAG, "onSurfaceTextureDestroyed: ")
+                textureRender.stop()
+                return true
+            }
+
+            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+                Log.i(TAG, "onSurfaceTextureUpdated: $surface")
+                if (surface != thisSurface) {
+                    thisSurface = surface
+                    textureRender.init(Surface(surface))
+                }
+            }
+
+        }
 
     }
 
