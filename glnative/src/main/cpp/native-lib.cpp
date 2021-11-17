@@ -33,6 +33,7 @@ Java_com_zl_glnative_GLRenderer_reset(JNIEnv *env, jobject thiz, jint width, jin
     LOGD("jni reset");
     TriangleRender* render = getRender(env, thiz);
     LOGI("get render %d", render);
+    LOGI("get render reset:%d,%d", width, height);
     render->reset(width, height);
 }
 

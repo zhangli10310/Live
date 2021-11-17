@@ -58,7 +58,7 @@ class GLActivity : AppCompatActivity() {
                 width: Int,
                 height: Int
             ) {
-                Log.i(TAG, "surfaceChanged: ")
+                Log.i(TAG, "surfaceChanged: $width,$height")
                 renderer.reset(width, height)
             }
 
@@ -69,45 +69,45 @@ class GLActivity : AppCompatActivity() {
 
         })
 
-        val textureRender = GLRenderer()
-        binding.textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-
-            private var thisSurface: SurfaceTexture? = null
-
-            override fun onSurfaceTextureAvailable(
-                surface: SurfaceTexture,
-                width: Int,
-                height: Int
-            ) {
-                Log.i(TAG, "onSurfaceTextureAvailable: $surface")
-                thisSurface = surface
-                textureRender.init(Surface(surface))
-            }
-
-            override fun onSurfaceTextureSizeChanged(
-                surface: SurfaceTexture,
-                width: Int,
-                height: Int
-            ) {
-                Log.i(TAG, "onSurfaceTextureSizeChanged: ")
-                textureRender.reset(width, height)
-            }
-
-            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-                Log.i(TAG, "onSurfaceTextureDestroyed: ")
-                textureRender.stop()
-                return true
-            }
-
-            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-                Log.i(TAG, "onSurfaceTextureUpdated: $surface")
-                if (surface != thisSurface) {
-                    thisSurface = surface
-                    textureRender.init(Surface(surface))
-                }
-            }
-
-        }
+//        val textureRender = GLRenderer()
+//        binding.textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+//
+//            private var thisSurface: SurfaceTexture? = null
+//
+//            override fun onSurfaceTextureAvailable(
+//                surface: SurfaceTexture,
+//                width: Int,
+//                height: Int
+//            ) {
+//                Log.i(TAG, "onSurfaceTextureAvailable: $surface")
+//                thisSurface = surface
+//                textureRender.init(Surface(surface))
+//            }
+//
+//            override fun onSurfaceTextureSizeChanged(
+//                surface: SurfaceTexture,
+//                width: Int,
+//                height: Int
+//            ) {
+//                Log.i(TAG, "onSurfaceTextureSizeChanged: ")
+//                textureRender.reset(width, height)
+//            }
+//
+//            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+//                Log.i(TAG, "onSurfaceTextureDestroyed: ")
+//                textureRender.stop()
+//                return true
+//            }
+//
+//            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+//                Log.i(TAG, "onSurfaceTextureUpdated: $surface")
+//                if (surface != thisSurface) {
+//                    thisSurface = surface
+//                    textureRender.init(Surface(surface))
+//                }
+//            }
+//
+//        }
 
     }
 

@@ -92,9 +92,11 @@ BaseRender::BaseRender() {
     threadExit.store(false);
 
     auto lambda_fun = [&]() -> void {
-        while (threadRun) {
+        while (threadRun && !queue->isQuit()) {
+            LOGI("thread run");
             this->run();
         }
+        LOGI("thread exit");
         threadExit.store(true);
     };
     std::thread t(lambda_fun);
@@ -104,8 +106,8 @@ BaseRender::BaseRender() {
 BaseRender::~BaseRender() {
     LOGI("release render");
     threadRun.store(false);
-    queue->put([] {}); // push 一个空消息解除阻塞
-    while (!threadExit && !queue->isQuit());
+    while (!threadExit || !queue->isQuit());
+    LOGI("isQuit:%d", queue->isQuit());
     delete queue;
     LOGI("render released");
 }
@@ -132,6 +134,7 @@ void BaseRender::init(ANativeWindow *window) {
         printGLString("GL_EXTENSIONS", GL_EXTENSIONS);
         if (this->eglWrapper->isInit()) {
             onInit();
+            LOGI("egl surface reset: %d, %d", eglWrapper->surfaceWidth, eglWrapper->surfaceHeight);
             reset(eglWrapper->surfaceWidth, eglWrapper->surfaceHeight);
         }
         onDraw();
@@ -144,10 +147,12 @@ void BaseRender::reset(int width, int height) {
     if (width == eglWrapper->surfaceWidth && height == eglWrapper->surfaceHeight) {
         return;
     }
+    queue->clear();
     LOGI("render reset size");
-    function<void()> lambda = [&] {
+    function<void()> lambda = [=] {
         LOGI("onSizeChange lambda width=%d,height=%d", width, height);
         onSizeChange(width, height);
+        draw();
     };
     queue->put(lambda);
 }
@@ -165,14 +170,15 @@ void BaseRender::draw() {
             default:
                 break;
         }
-        queue->put(lambda);
+        draw();
+//        queue->put(lambda);
     };
     queue->put(lambda);
 }
 
 void BaseRender::destroy() {
     LOGI("render destroy");
-    function<void()> lambda = [&] {
+    function<void()> lambda = [=] {
         LOGI("lambda destroy");
         if (eglWrapper != nullptr) {
             eglWrapper->destroy();
@@ -182,5 +188,5 @@ void BaseRender::destroy() {
         onDestroy();
         queue->quit();
     };
-//    queue->put(lambda);
+    queue->put(lambda);
 }

@@ -8,6 +8,7 @@
 #include<mutex>
 #include<list>
 #include<condition_variable>
+#include <android_log.h>
 
 using namespace std;
 
@@ -32,6 +33,7 @@ public:
     void put(T &&x) {
         unique_lock<mutex> guard(m_mutex);
         if (quited) {
+            LOGI("put fail, queue has quit");
             return;
         }
         m_queue.push_back(move(x));
@@ -53,6 +55,12 @@ public:
     size_t size() {
         unique_lock<mutex> guard(m_mutex);
         return m_queue.size();
+    }
+
+    void clear() {
+        unique_lock<mutex> guard(m_mutex);
+        m_queue.clear();
+        m_cond.notify_all();
     }
 
     void quit() {
