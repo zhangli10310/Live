@@ -93,7 +93,7 @@ BaseRender::BaseRender() {
 
     auto lambda_fun = [&]() -> void {
         while (threadRun && !queue->isQuit()) {
-            LOGI("thread run");
+            LOGD("thread run");
             this->run();
         }
         LOGI("thread exit");
@@ -144,9 +144,11 @@ void BaseRender::init(ANativeWindow *window) {
 }
 
 void BaseRender::reset(int width, int height) {
-    if (width == eglWrapper->surfaceWidth && height == eglWrapper->surfaceHeight) {
+    if (width == currentWidth && currentHeight) {
         return;
     }
+    currentWidth = width;
+    currentHeight = height;
     queue->clear();
     LOGI("render reset size");
     function<void()> lambda = [=] {
@@ -158,7 +160,7 @@ void BaseRender::reset(int width, int height) {
 }
 
 void BaseRender::draw() {
-    LOGI("render reset size");
+    LOGD("draw()");
     function<void()> lambda = [=] {
         onDraw();
         EGLint ret = eglWrapper->swapBuffers();

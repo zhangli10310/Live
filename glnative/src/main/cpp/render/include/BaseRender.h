@@ -20,6 +20,9 @@ private:
     std::atomic<bool> threadRun;
     std::atomic<bool> threadExit;
 
+    int currentWidth;
+    int currentHeight;
+
     void run();
 
 protected:
