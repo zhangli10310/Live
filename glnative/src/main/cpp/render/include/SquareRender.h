@@ -47,12 +47,12 @@ protected:
         glUseProgram(program);
 
         const GLfloat gTriangleVertices[] = {0.0f, 0.5f, -0.5f, -0.5f, 0.0f, -0.5f,
-                                             0.5f, -0.5f};
+                                             0.0f, 0.5f, 0.0f, -0.5f, 0.5f, -0.5f};
         glEnableVertexAttribArray(positionLoc);
         checkGlError("glEnableVertexAttribArray");
         glVertexAttribPointer(positionLoc, 2, GL_FLOAT, GL_FALSE, 0, gTriangleVertices);
         checkGlError("glVertexAttribPointer");
-        glDrawArrays(GL_TRIANGLES, 0, 4);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glDisableVertexAttribArray(positionLoc);
         checkGlError("glDrawArrays");
     }

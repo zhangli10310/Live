@@ -101,10 +101,6 @@ class GLActivity : AppCompatActivity() {
 //
 //            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
 //                Log.i(TAG, "onSurfaceTextureUpdated: $surface")
-//                if (surface != thisSurface) {
-//                    thisSurface = surface
-//                    textureRender.init(Surface(surface))
-//                }
 //            }
 //
 //        }

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.TextView
 import com.zl.glnative.GLActivity
 import com.zl.live.databinding.ActivityMainBinding
+import com.zl.mediacodec.Mp4Activity
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,8 +17,13 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        startActivity(Intent(this, GLActivity::class.java))
-        finish()
+
+        binding.toGL.setOnClickListener {
+            startActivity(Intent(this, GLActivity::class.java))
+        }
+        binding.toMp4.setOnClickListener {
+            startActivity(Intent(this, Mp4Activity::class.java))
+        }
     }
 
 }
