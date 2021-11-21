@@ -2,97 +2,23 @@
 // Created by zhangli on 2021/7/20.
 //
 #include <unistd.h>
+#include <android/native_window_jni.h>
 #include "BaseRender.h"
 #include "GLES2/gl2.h"
 #include "android_log.h"
 #include "malloc.h"
 
-
-void BaseRender::printGLString(const char *name, GLenum s) {
-    const char *v = (const char *) glGetString(s);
-    LOGI("GL %s = %s\n", name, v);
-}
-
-void BaseRender::checkGlError(const char *op) {
-    for (GLint error = glGetError(); error; error = glGetError()) {
-        LOGI("after %s() glError (0x%x)\n", op, error);
-    }
-}
-
-GLuint BaseRender::loadShader(GLenum shaderType, const char *pSource) {
-    GLuint shader = glCreateShader(shaderType);
-    checkGlError("glCreateShader");
-    LOGI("shader: %d", shader);
-    if (shader) {
-        glShaderSource(shader, 1, &pSource, NULL);
-        glCompileShader(shader);
-        GLint compiled = 0;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-        if (!compiled) {
-            GLint infoLen = 0;
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-            if (infoLen) {
-                char *buf = (char *) malloc(infoLen);
-                if (buf) {
-                    glGetShaderInfoLog(shader, infoLen, NULL, buf);
-                    LOGE("Could not compile shader %d:\n%s\n",
-                         shaderType, buf);
-                    free(buf);
-                }
-                glDeleteShader(shader);
-                shader = 0;
-            }
-        }
-    }
-    return shader;
-}
-
-GLuint BaseRender::createProgram(const char *pVertexSource, const char *pFragmentSource) {
-    GLuint vertexShader = loadShader(GL_VERTEX_SHADER, pVertexSource);
-    if (!vertexShader) {
-        return 0;
-    }
-
-    GLuint pixelShader = loadShader(GL_FRAGMENT_SHADER, pFragmentSource);
-    if (!pixelShader) {
-        return 0;
-    }
-
-    GLuint program = glCreateProgram();
-    if (program) {
-        glAttachShader(program, vertexShader);
-        checkGlError("glAttachShader");
-        glAttachShader(program, pixelShader);
-        checkGlError("glAttachShader");
-        glLinkProgram(program);
-        GLint linkStatus = GL_FALSE;
-        glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
-        if (linkStatus != GL_TRUE) {
-            GLint bufLength = 0;
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufLength);
-            if (bufLength) {
-                char *buf = (char *) malloc(bufLength);
-                if (buf) {
-                    glGetProgramInfoLog(program, bufLength, NULL, buf);
-                    LOGE("Could not link program:\n%s\n", buf);
-                    free(buf);
-                }
-            }
-            glDeleteProgram(program);
-            program = 0;
-        }
-    }
-    return program;
-}
-
 BaseRender::BaseRender() {
-    eglWrapper = nullptr;
-    queue = new BlockQueue<function<void()>>();
-    threadRun.store(true);
+    eglHelper = nullptr;
+    queue = new BlockQueue<ExecMsg>(INVALID);
     threadExit.store(false);
 
     auto lambda_fun = [&]() -> void {
-        while (threadRun && !queue->isQuit()) {
+        if (this->eglHelper == nullptr) {
+            this->eglHelper = new EglHelper();
+        }
+        eglHelper->start();
+        while (!queue->isQuit()) {
             LOGD("thread run");
             this->run();
         }
@@ -105,42 +31,70 @@ BaseRender::BaseRender() {
 
 BaseRender::~BaseRender() {
     LOGI("release render");
-    threadRun.store(false);
+    destroy();
+//    threadRun.store(false);
     while (!threadExit || !queue->isQuit());
-    LOGI("isQuit:%d", queue->isQuit());
     delete queue;
     LOGI("render released");
 }
 
 void BaseRender::run() {
     LOGD("try take message");
-    function<void()> func = queue->take();
-    if (func != nullptr) {
-        func();
+    ExecMsg msgId = queue->take();
+    switch (msgId) {
+        case INVALID:
+            break;
+        case RENDER: {
+            onDraw();
+            GLint ret = eglHelper->swapBuffers();
+            // handle ret EGL_SUCCESS, EGL_CONTEXT_LOST
+            LOGD("swapBuffers ret=%x", ret);
+            draw();
+            break;
+        }
+        case CHANGE_SURFACE: {
+            bool initSuccess = eglHelper->createEglSurface(nwin);
+            if (initSuccess) {
+                LOGI("egl surface has init");
+                //打印GL信息
+                printGLString("GL_RENDERER", GL_RENDERER);
+                printGLString("GL_VENDOR", GL_VENDOR);
+                printGLString("GL_VERSION", GL_VERSION);
+                printGLString("GL_EXTENSIONS", GL_EXTENSIONS);
+                onInit();
+                reset(eglHelper->surfaceWidth, eglHelper->surfaceHeight);
+            } else {
+                LOGI("clear queue because surface changed");
+                queue->clear(RENDER);
+            }
+            break;
+        }
+        case RESIZE_SURFACE: {
+            onSizeChange(currentWidth, currentHeight);
+            draw();
+            break;
+        }
+        case FINISH: {
+            LOGI("render start finish");
+            eglHelper->destroy();
+            delete eglHelper;
+            eglHelper = nullptr;
+            queue->quit();
+            LOGI("render finished");
+            break;
+        }
     }
 }
 
-
-void BaseRender::init(ANativeWindow *window) {
-
-    function<void()> lambda = [=] {
-        if (this->eglWrapper == nullptr) {
-            this->eglWrapper = new EglWrapper();
-        }
-        this->eglWrapper->init(window);
-        printGLString("GL_RENDERER", GL_RENDERER);
-        printGLString("GL_VENDOR", GL_VENDOR);
-        printGLString("GL_VERSION", GL_VERSION);
-        printGLString("GL_EXTENSIONS", GL_EXTENSIONS);
-        if (this->eglWrapper->isInit()) {
-            onInit();
-            LOGI("egl surface reset: %d, %d", eglWrapper->surfaceWidth, eglWrapper->surfaceHeight);
-            reset(eglWrapper->surfaceWidth, eglWrapper->surfaceHeight);
-        }
-        onDraw();
-        eglWrapper->swapBuffers();
-    };
-    queue->put(lambda);
+void BaseRender::changeSurface(JNIEnv *env, jobject surface) {
+    if (nwin != nullptr) {
+        ANativeWindow_release(nwin);
+        nwin = nullptr;
+    }
+    if (surface != nullptr) {
+        nwin = ANativeWindow_fromSurface(env, surface);
+    }
+    queue->put(CHANGE_SURFACE);
 }
 
 void BaseRender::reset(int width, int height) {
@@ -149,46 +103,18 @@ void BaseRender::reset(int width, int height) {
     }
     currentWidth = width;
     currentHeight = height;
-    queue->clear();
-    LOGI("render reset size");
-    function<void()> lambda = [=] {
-        LOGI("onSizeChange lambda width=%d,height=%d", width, height);
-        onSizeChange(width, height);
-        draw();
-    };
-    queue->put(lambda);
+    LOGI("reset size width=%d,height=%d", width, height);
+    queue->put(RESIZE_SURFACE);
 }
 
 void BaseRender::draw() {
     LOGD("draw()");
-    function<void()> lambda = [=] {
-        onDraw();
-        EGLint ret = eglWrapper->swapBuffers();
-        switch (ret) {
-            case EGL_SUCCESS:
-                break;
-            case EGL_CONTEXT_LOST:
-                break;
-            default:
-                break;
-        }
-        draw();
-//        queue->put(lambda);
-    };
-    queue->put(lambda);
+    queue->clear(RENDER);
+    queue->put(RENDER);
 }
 
 void BaseRender::destroy() {
     LOGI("render destroy");
-    function<void()> lambda = [=] {
-        LOGI("lambda destroy");
-        if (eglWrapper != nullptr) {
-            eglWrapper->destroy();
-            delete eglWrapper;
-            eglWrapper = nullptr;
-        }
-        onDestroy();
-        queue->quit();
-    };
-    queue->put(lambda);
+    queue->clear(RENDER);
+    queue->put(FINISH);
 }

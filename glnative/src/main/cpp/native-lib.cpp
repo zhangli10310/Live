@@ -1,7 +1,6 @@
 #include <jni.h>
 #include <SquareRender.h>
-//#include "TriangleRender.h"
-#include "android/native_window_jni.h"
+#include <TriangleRender.h>
 #include "android_log.h"
 
 BaseRender *getRender(JNIEnv *env, jobject thiz) {
@@ -17,23 +16,38 @@ void setRender(JNIEnv *env, jobject thiz, const BaseRender *render) {
     env->SetLongField(thiz, fid, (jlong) render);
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_zl_glnative_GLRenderer_init(JNIEnv *env, jobject thiz, jobject surface) {
-    LOGD("jni init");
-    ANativeWindow *nwin = ANativeWindow_fromSurface(env, surface);
-    auto *render = new Square();
-    LOGI("set render %ld", render);
-    setRender(env, thiz, render);
-    render->init(nwin);
+void destroyRender(JNIEnv *env, jobject thiz) {
+    auto render = getRender(env, thiz);
+    if (render != nullptr) {
+        delete render;
+        render = nullptr;
+        setRender(env, thiz, render);
+    }
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zl_glnative_GLRenderer_reset(JNIEnv *env, jobject thiz, jint width, jint height) {
+Java_com_zl_glnative_GLRenderer_init(JNIEnv *env, jobject thiz) {
+    LOGD("jni init");
+    auto *render = new TriangleRender();
+    LOGI("set render %ld", (long)render);
+    setRender(env, thiz, render);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zl_glnative_GLRenderer_changeSurface(JNIEnv *env, jobject thiz, jobject surface) {
+    LOGD("jni changeSurface");
+    auto render = getRender(env, thiz);
+    render->changeSurface(env, surface);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zl_glnative_GLRenderer_resize(JNIEnv *env, jobject thiz, jint width, jint height) {
     LOGD("jni reset");
     auto render = getRender(env, thiz);
-    LOGI("get render %d", render);
+    LOGI("get render %ld", render);
     LOGI("get render reset:%d,%d", width, height);
     render->reset(width, height);
 }
@@ -41,18 +55,23 @@ Java_com_zl_glnative_GLRenderer_reset(JNIEnv *env, jobject thiz, jint width, jin
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zl_glnative_GLRenderer_stop(JNIEnv *env, jobject thiz) {
-    LOGD("jni stop");
     auto render = getRender(env, thiz);
-    render->destroy();
+    if (render != nullptr) {
+        LOGD("jni stop");
+        render->changeSurface(env, nullptr);
+    }
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zl_glnative_GLRenderer_finalize(JNIEnv *env, jobject thiz) {
-    auto render = getRender(env, thiz);
-    if (render != nullptr) {
-        delete render;
-        render = nullptr;
-        setRender(env, thiz, render);
-    }
+    LOGI("finalize");
+    destroyRender(env, thiz);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zl_glnative_GLRenderer_destroy(JNIEnv *env, jobject thiz) {
+    LOGI("destroy");
+    destroyRender(env, thiz);
 }

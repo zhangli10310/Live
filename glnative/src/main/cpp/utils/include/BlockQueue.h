@@ -15,8 +15,9 @@ using namespace std;
 template<typename T>
 class BlockQueue {
 public:
-    BlockQueue() {
+    BlockQueue(T defaultValue) {
         quited = false;
+        this->defaultValue = defaultValue;
     }
 
     ~BlockQueue() {}
@@ -45,7 +46,7 @@ public:
         while (m_queue.size() == 0 && !quited)
             m_cond.wait(guard);
         if (quited) {
-            return NULL;
+            return defaultValue;
         }
         T front(move(m_queue.front()));
         m_queue.pop_front();
@@ -57,9 +58,15 @@ public:
         return m_queue.size();
     }
 
-    void clear() {
+    void clearAll() {
         unique_lock<mutex> guard(m_mutex);
         m_queue.clear();
+        m_cond.notify_all();
+    }
+
+    void clear(T msg) {
+        unique_lock<mutex> guard(m_mutex);
+        m_queue.remove(msg);
         m_cond.notify_all();
     }
 
@@ -76,6 +83,7 @@ public:
 
 private:
     bool quited;
+    T defaultValue;
     mutable mutex m_mutex;
     condition_variable m_cond;
     list<T> m_queue;

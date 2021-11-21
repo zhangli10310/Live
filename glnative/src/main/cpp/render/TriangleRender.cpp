@@ -2,6 +2,7 @@
 // Created by zhangli on 2021/7/20.
 //
 
+#include <unistd.h>
 #include "TriangleRender.h"
 #include "android_log.h"
 
@@ -27,8 +28,9 @@ void TriangleRender::onSizeChange(int width, int height) {
 }
 
 void TriangleRender::onDraw() {
-    LOGI("onDraw");
+    LOGD("onDraw");
     static float grey;
+    usleep(200000);
     grey += 0.01f;
     if (grey > 1.0f) {
         grey = 0.0f;
