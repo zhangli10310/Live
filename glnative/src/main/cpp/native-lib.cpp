@@ -1,5 +1,4 @@
 #include <jni.h>
-#include <SquareRender.h>
 #include <TriangleRender.h>
 #include "android_log.h"
 

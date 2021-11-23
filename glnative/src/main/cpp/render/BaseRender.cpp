@@ -49,7 +49,9 @@ void BaseRender::run() {
             GLint ret = eglHelper->swapBuffers();
             // handle ret EGL_SUCCESS, EGL_CONTEXT_LOST
             LOGD("swapBuffers ret=%x", ret);
-            draw();
+            if (!renderWhenDirty) {
+                draw();
+            }
             break;
         }
         case CHANGE_SURFACE: {
@@ -71,7 +73,9 @@ void BaseRender::run() {
         }
         case RESIZE_SURFACE: {
             onSizeChange(currentWidth, currentHeight);
-            draw();
+            if (!renderWhenDirty) {
+                draw();
+            }
             break;
         }
         case FINISH: {
@@ -84,6 +88,10 @@ void BaseRender::run() {
             break;
         }
     }
+}
+
+void BaseRender::setRenderWhenDirty(bool value) {
+    renderWhenDirty = value;
 }
 
 void BaseRender::changeSurface(JNIEnv *env, jobject surface) {

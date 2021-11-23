@@ -108,6 +108,8 @@ private:
     int currentWidth;
     int currentHeight;
 
+    bool renderWhenDirty = false;
+
     void run();
 
 protected:
@@ -121,7 +123,12 @@ protected:
     virtual void onDestroy() = 0;
 
 public:
+
+    GLuint* textureId; // 绑定的纹理id,如果用到纹理的话
+
     BaseRender();
+
+    void setRenderWhenDirty(bool value);
 
     void changeSurface(JNIEnv *env, jobject surface);
 
