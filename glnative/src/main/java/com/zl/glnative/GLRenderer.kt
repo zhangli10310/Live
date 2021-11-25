@@ -34,6 +34,8 @@ class GLRenderer {
 
     external fun resize(width: Int, height: Int)
 
+    external fun setTextureSize(width: Int, height: Int)
+
     external fun draw()
 
     /**

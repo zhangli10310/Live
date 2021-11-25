@@ -129,6 +129,11 @@ void BaseRender::callFromNativeThread() {
     queue->put(CALL_BACK);
 }
 
+void BaseRender::setTextureSize(int width, int height) {
+    textureWidth = width;
+    textureHeight = height;
+}
+
 void BaseRender::destroy() {
     LOGI("render destroy");
     queue->clear(RENDER);

@@ -20,14 +20,15 @@ auto textureFragmentShader =
         "varying vec2 v_texPosition;\n"
         "uniform samplerExternalOES sTexture;\n"
         "void main() {\n"
-        "    gl_FragColor=texture2D(sTexture, v_texPosition);\n"
+        "    vec4 rgb = texture2D(sTexture, v_texPosition);"
+        "    gl_FragColor = vec4(rgb.r, rgb.g, rgb.b, 0.3);\n"
         "}\n";
 
 GLfloat vertexData[] = {
-        -1.0f, -0.5f,
-        1.0f, -0.5f,
-        -1.0f, 0.5f,
-        1.0f, 0.5f
+        -1.0f, -1.0f,
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f
 };
 
 GLfloat textureData[] = {
@@ -59,13 +60,48 @@ void TextureRender::renderMediacodec() const {
     glUseProgram(program);
 
     glEnableVertexAttribArray(avPositionLoc);
-    glVertexAttribPointer(avPositionLoc, 2, GL_FLOAT, false, 8, vertexData);
+
+    GLfloat *vData = vertexData;
+    if (textureHeight > 0 && textureWidth > 0) {
+        if ((float) textureHeight / (float) currentHeight >
+            (float) textureWidth * 1.0f / (float) currentWidth) { // 按高适配
+            float width = (float) textureWidth * (float) currentHeight / (float) textureHeight / (float) currentWidth;
+            vData = new GLfloat[]{
+                    -width, -1.0f,
+                    width, -1.0f,
+                    -width, 1.0f,
+                    width, 1.0f
+            };
+        } else {
+            float height = (float) textureHeight * (float) currentWidth / (float) textureWidth /
+                           (float) currentHeight;
+            vData = new GLfloat[]{
+                    -1.0f, -height,
+                    1.0f, -height,
+                    -1.0f, height,
+                    1.0f, height
+            };
+        }
+    }
+
+    glVertexAttribPointer(avPositionLoc, 2, GL_FLOAT, false, 8, vData);
     glEnableVertexAttribArray(afPositionLoc);
     glVertexAttribPointer(afPositionLoc, 2, GL_FLOAT, false, 8, textureData);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, textureId);
     glUniform1i(textureLoc, 0);
+
+    glEnable(GL_BLEND);
+    // SRC的颜色已经在片段着色器中乘过一次MASK的透明度，故srcAlpha为GL_ONE
+    glBlendFuncSeparate(
+            GL_SRC_ALPHA,
+            GL_ONE_MINUS_SRC_ALPHA,
+            GL_ONE,
+            GL_ONE_MINUS_SRC_ALPHA
+    );
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDisable(GL_BLEND);
 }
 
 void TextureRender::onSizeChange(int width, int height) {
@@ -74,10 +110,9 @@ void TextureRender::onSizeChange(int width, int height) {
 
 void TextureRender::onDraw() {
     glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     // renderMediacodec
     renderMediacodec();
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void TextureRender::onDestroy() {

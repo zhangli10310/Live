@@ -148,3 +148,12 @@ Java_com_zl_glnative_GLRenderer_callNativeThread(JNIEnv *env, jobject thiz) {
         render->callFromNativeThread();
     }
 }
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zl_glnative_GLRenderer_setTextureSize(JNIEnv *env, jobject thiz, jint width, jint height) {
+    auto render = getRender(env, thiz);
+    if (render != nullptr) {
+        LOGD("jni setTextureSize");
+        render->setTextureSize(width, height);
+    }
+}

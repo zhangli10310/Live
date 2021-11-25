@@ -102,7 +102,7 @@ typedef void (*CallbackFun)();
 
 class BaseRender {
 
-private:
+protected:
     ANativeWindow *nwin;
     EglHelper *eglHelper;
 
@@ -116,8 +116,6 @@ private:
 
     void run();
 
-protected:
-
     virtual void onInit() = 0;
 
     virtual void onSizeChange(int width, int height) = 0;
@@ -130,7 +128,10 @@ public:
 
     GLuint textureId; // 绑定的纹理id,如果用到纹理的话
     TextureIdGenerate textureGenerate;
+    int textureWidth,textureHeight;
     CallbackFun callback;
+
+    void setTextureSize(int width, int height);
 
     BaseRender();
 

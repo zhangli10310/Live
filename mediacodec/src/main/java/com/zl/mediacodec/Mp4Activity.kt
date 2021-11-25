@@ -24,17 +24,19 @@ class Mp4Activity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMp4Binding
 
+    private lateinit var render: GLRenderer
+
+    var exit = false
+    var surface: SurfaceTexture? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMp4Binding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.mp4TextureView.surfaceTextureListener = GLTextureListener(GLRenderer().apply {
+        render = GLRenderer().apply {
             init()
-            val render = this
             listener = object : GLRenderer.NativeCallback {
-
-                var surface: SurfaceTexture? = null
 
                 override fun onTextureIdGenerate(textureId: Int) {
                     Log.i(TAG, "onTextureIdGenerate: ${getCurrentThreadInfo()}")
@@ -57,7 +59,8 @@ class Mp4Activity : AppCompatActivity() {
                 }
 
             }
-        })
+        }
+        binding.mp4TextureView.surfaceTextureListener = GLTextureListener(render)
 
 //        binding.mp4TextureView.surfaceTextureListener =
 //            object : TextureView.SurfaceTextureListener {
@@ -108,16 +111,19 @@ class Mp4Activity : AppCompatActivity() {
                 break
             }
         }
-        if (videoIndex < 0 || mime == null) {
+        if (videoIndex < 0 || mime == null || format == null) {
             return
         }
+        val width = format.getInteger(MediaFormat.KEY_WIDTH)
+        val height = format.getInteger(MediaFormat.KEY_HEIGHT)
+        render.setTextureSize(width, height)
         extractor.selectTrack(videoIndex)
         val decoder = MediaCodec.createDecoderByType(mime)
         decoder.configure(format, Surface(surface), null, 0)
         decoder.start()
         val info = MediaCodec.BufferInfo()
         var videoEOS = false
-        while (true) {
+        while (!exit) {
             if (!videoEOS) {
                 videoEOS = putBufferToCoder(extractor, decoder)
             }
@@ -174,5 +180,11 @@ class Mp4Activity : AppCompatActivity() {
             }
         }
         return isMediaEOS
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        exit = true
+        surface?.release()
     }
 }
