@@ -1,6 +1,24 @@
 #include <jni.h>
 #include <TriangleRender.h>
+#include <TextureRender.h>
 #include "android_log.h"
+
+JavaVM *jvm;
+jobject obj;
+
+//extern "C"
+//JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+//    JNIEnv *env = nullptr;
+//    //获取JNIEnv
+//    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+//        return -1;
+//    }
+//    LOGI("jni onload");
+//    jvm = vm;
+//
+//    //返回jni 的版本
+//    return JNI_VERSION_1_6;
+//}
 
 BaseRender *getRender(JNIEnv *env, jobject thiz) {
     jclass clazz = env->GetObjectClass(thiz);
@@ -24,13 +42,50 @@ void destroyRender(JNIEnv *env, jobject thiz) {
     }
 }
 
+void textureGenerate(GLuint texName) {
+    LOGI("thread id: %d, texture id %d", std::this_thread::get_id(), texName);
+    JNIEnv* env;
+    jvm->AttachCurrentThread(&env, nullptr);
+    jclass clazz = env->GetObjectClass(obj);
+    if (clazz == nullptr) {
+        LOGE("get java class error");
+    }
+    jmethodID method = env->GetMethodID(clazz, "callFromNative", "(I)V");
+    if (method == nullptr) {
+        LOGE("get method id error");
+    }
+    env->CallVoidMethod(obj, method, (jint)texName);
+}
+
+void callback() {
+    LOGI("callback form thread id: %d", std::this_thread::get_id());
+    JNIEnv* env;
+    jvm->AttachCurrentThread(&env, nullptr);
+    jclass clazz = env->GetObjectClass(obj);
+    if (clazz == nullptr) {
+        LOGE("get java class error");
+    }
+    jmethodID method = env->GetMethodID(clazz, "callFromNativeThread", "()V");
+    if (method == nullptr) {
+        LOGE("get method id error");
+    }
+    env->CallVoidMethod(obj, method);
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zl_glnative_GLRenderer_init(JNIEnv *env, jobject thiz) {
-    LOGD("jni init");
-    auto *render = new TriangleRender();
-    LOGI("set render %ld", (long)render);
+
+    env->GetJavaVM(&jvm);
+    obj = env->NewGlobalRef(thiz);
+    LOGI("jni init,thread id:%d", std::this_thread::get_id());
+    auto *render = new TextureRender();
+    render->setRenderWhenDirty(true);
+    LOGI("set render %ld", (long) render);
     setRender(env, thiz, render);
+
+    render->textureGenerate = textureGenerate;
+    render->callback = callback;
 }
 
 extern "C"
@@ -73,4 +128,23 @@ JNIEXPORT void JNICALL
 Java_com_zl_glnative_GLRenderer_destroy(JNIEnv *env, jobject thiz) {
     LOGI("destroy");
     destroyRender(env, thiz);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zl_glnative_GLRenderer_draw(JNIEnv *env, jobject thiz) {
+    auto render = getRender(env, thiz);
+    if (render != nullptr) {
+        LOGD("jni draw");
+        render->draw();
+    }
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_zl_glnative_GLRenderer_callNativeThread(JNIEnv *env, jobject thiz) {
+    auto render = getRender(env, thiz);
+    if (render != nullptr) {
+        LOGD("jni callNativeThread");
+        render->callFromNativeThread();
+    }
 }

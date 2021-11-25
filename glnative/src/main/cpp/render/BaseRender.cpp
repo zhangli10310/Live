@@ -44,6 +44,9 @@ void BaseRender::run() {
     switch (msgId) {
         case INVALID:
             break;
+        case CALL_BACK: {
+            callback();
+        }
         case RENDER: {
             onDraw();
             GLint ret = eglHelper->swapBuffers();
@@ -119,6 +122,11 @@ void BaseRender::draw() {
     LOGD("draw()");
     queue->clear(RENDER);
     queue->put(RENDER);
+}
+
+void BaseRender::callFromNativeThread() {
+    LOGD("callFromNativeThread()");
+    queue->put(CALL_BACK);
 }
 
 void BaseRender::destroy() {

@@ -7,7 +7,7 @@
 
 #include <BaseRender.h>
 
-class TextureRender: BaseRender {
+class TextureRender: public BaseRender {
 
 private:
     GLint program;

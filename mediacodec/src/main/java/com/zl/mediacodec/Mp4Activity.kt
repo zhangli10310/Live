@@ -7,8 +7,10 @@ import android.media.MediaFormat
 import android.os.Bundle
 import android.util.Log
 import android.view.Surface
-import android.view.TextureView
 import androidx.appcompat.app.AppCompatActivity
+import com.zl.glnative.GLRenderer
+import com.zl.glnative.GLTextureListener
+import com.zl.glnative.getCurrentThreadInfo
 import com.zl.mediacodec.databinding.ActivityMp4Binding
 import kotlin.concurrent.thread
 
@@ -26,39 +28,71 @@ class Mp4Activity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMp4Binding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.mp4TextureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-            override fun onSurfaceTextureAvailable(
-                surface: SurfaceTexture,
-                width: Int,
-                height: Int
-            ) {
-                Log.i(TAG, "onSurfaceTextureAvailable: ")
-                thread {
-                    decode(surface, width, height)
+
+        binding.mp4TextureView.surfaceTextureListener = GLTextureListener(GLRenderer().apply {
+            init()
+            val render = this
+            listener = object : GLRenderer.NativeCallback {
+
+                var surface: SurfaceTexture? = null
+
+                override fun onTextureIdGenerate(textureId: Int) {
+                    Log.i(TAG, "onTextureIdGenerate: ${getCurrentThreadInfo()}")
+                    surface = SurfaceTexture(textureId).apply {
+                        setOnFrameAvailableListener {
+                            Log.i(TAG, "OnFrameAvailable: ${getCurrentThreadInfo()}")
+//                        it.updateTexImage()
+                            render.callNativeThread()
+                            render.draw()
+                        }
+                        thread {
+                            decode(this)
+                        }
+                    }
                 }
-            }
 
-            override fun onSurfaceTextureSizeChanged(
-                surface: SurfaceTexture,
-                width: Int,
-                height: Int
-            ) {
-                Log.i(TAG, "onSurfaceTextureSizeChanged: ")
-            }
+                override fun callFromNativeThread() {
+                    Log.i(TAG, "callFromNativeThread: ${getCurrentThreadInfo()}")
+                    surface?.updateTexImage()
+                }
 
-            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-                Log.i(TAG, "onSurfaceTextureDestroyed: ")
-                return true
             }
+        })
 
-            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-                Log.d(TAG, "onSurfaceTextureUpdated: ")
-            }
-
-        }
+//        binding.mp4TextureView.surfaceTextureListener =
+//            object : TextureView.SurfaceTextureListener {
+//                override fun onSurfaceTextureAvailable(
+//                    surface: SurfaceTexture,
+//                    width: Int,
+//                    height: Int
+//                ) {
+//                    Log.i(TAG, "onSurfaceTextureAvailable: ")
+//                    thread {
+//                        decode(surface, width, height)
+//                    }
+//                }
+//
+//                override fun onSurfaceTextureSizeChanged(
+//                    surface: SurfaceTexture,
+//                    width: Int,
+//                    height: Int
+//                ) {
+//                    Log.i(TAG, "onSurfaceTextureSizeChanged: ")
+//                }
+//
+//                override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+//                    Log.i(TAG, "onSurfaceTextureDestroyed: ")
+//                    return true
+//                }
+//
+//                override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+//                    Log.d(TAG, "onSurfaceTextureUpdated: ")
+//                }
+//
+//            }
     }
 
-    private fun decode(surface: SurfaceTexture, width: Int, height: Int) {
+    private fun decode(surface: SurfaceTexture) {
         val extractor = MediaExtractor()
         val fd = assets.openFd("test.mp4")
         extractor.setDataSource(fd)
@@ -120,7 +154,7 @@ class Mp4Activity : AppCompatActivity() {
     ): Boolean {
         var isMediaEOS = false
         val inputBufferIndex = decoder.dequeueInputBuffer(-1)
-        Log.i(TAG, "putBufferToCoder: $inputBufferIndex")
+        Log.d(TAG, "putBufferToCoder: $inputBufferIndex")
         if (inputBufferIndex >= 0) {
             val inputBuffer = decoder.getInputBuffer(inputBufferIndex) ?: return false
             val sampleSize = extractor.readSampleData(inputBuffer, 0)

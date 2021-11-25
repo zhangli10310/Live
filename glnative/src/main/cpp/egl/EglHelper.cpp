@@ -70,6 +70,7 @@ bool EglHelper::createEglSurface(ANativeWindow *surface) {
         eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, surface, nullptr);
     } else {
         eglSurface = nullptr;
+        return false;
     }
     if (eglSurface == nullptr || EGL_NO_SURFACE == eglSurface) {
         LOGW("create eglSurface fail");

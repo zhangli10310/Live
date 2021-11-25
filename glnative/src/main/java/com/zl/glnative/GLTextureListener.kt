@@ -13,7 +13,7 @@ class GLTextureListener(private val render: GLRenderer) : TextureView.SurfaceTex
     private val TAG = "GLTextureListener"
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-        Log.i(TAG, "onSurfaceTextureAvailable: ")
+        Log.i(TAG, "${getCurrentThreadInfo()},onSurfaceTextureAvailable: ")
         render.changeSurface(Surface(surface))
     }
 

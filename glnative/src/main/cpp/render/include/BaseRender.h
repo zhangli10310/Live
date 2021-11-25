@@ -90,11 +90,15 @@ static GLuint createProgram(const char *pVertexSource, const char *pFragmentSour
 
 enum ExecMsg {
     INVALID,
+    CALL_BACK,
     RENDER,
     CHANGE_SURFACE,
     RESIZE_SURFACE,
     FINISH,
 };
+
+typedef void (*TextureIdGenerate)(GLuint texName);
+typedef void (*CallbackFun)();
 
 class BaseRender {
 
@@ -124,7 +128,9 @@ protected:
 
 public:
 
-    GLuint* textureId; // 绑定的纹理id,如果用到纹理的话
+    GLuint textureId; // 绑定的纹理id,如果用到纹理的话
+    TextureIdGenerate textureGenerate;
+    CallbackFun callback;
 
     BaseRender();
 
@@ -135,6 +141,8 @@ public:
     void reset(int width, int height);
 
     void draw();
+
+    void callFromNativeThread();
 
     void destroy();
 

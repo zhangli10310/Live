@@ -5,7 +5,7 @@
 #include "TextureRender.h"
 #include "GLES2/gl2ext.h"
 
-auto gVertexShader =
+auto textureVertexShader =
         "attribute vec4 av_Position;\n"
         "attribute vec2 af_Position;\n"
         "varying vec2 v_texPosition;\n"
@@ -14,7 +14,7 @@ auto gVertexShader =
         "    gl_Position = av_Position;\n"
         "}\n";
 
-auto gFragmentShader =
+auto textureFragmentShader =
         "#extension GL_OES_EGL_image_external : require\n"
         "precision mediump float;\n"
         "varying vec2 v_texPosition;\n"
@@ -24,10 +24,10 @@ auto gFragmentShader =
         "}\n";
 
 GLfloat vertexData[] = {
-        -1.0f, -1.0f,
-        1.0f, -1.0f,
-        -1.0f, 1.0f,
-        1.0f, 1.0f
+        -1.0f, -0.5f,
+        1.0f, -0.5f,
+        -1.0f, 0.5f,
+        1.0f, 0.5f
 };
 
 GLfloat textureData[] = {
@@ -38,19 +38,20 @@ GLfloat textureData[] = {
 };
 
 void TextureRender::onInit() {
-    program = createProgram(gVertexShader, gFragmentShader);
+    program = createProgram(textureVertexShader, textureFragmentShader);
     avPositionLoc = glGetAttribLocation(program, "av_Position");
     afPositionLoc = glGetAttribLocation(program, "af_Position");
     textureLoc = glGetUniformLocation(program, "sTexture");
 
-    glGenTextures(1, textureId);
+    LOGI("before GenTextures, textureId: %d", textureId);
+    glGenTextures(1, &textureId);
 
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-
+    textureGenerate(textureId);
 }
 
 void TextureRender::renderMediacodec() const {
@@ -63,7 +64,7 @@ void TextureRender::renderMediacodec() const {
     glVertexAttribPointer(afPositionLoc, 2, GL_FLOAT, false, 8, textureData);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_EXTERNAL_OES, *textureId);
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, textureId);
     glUniform1i(textureLoc, 0);
 }
 
