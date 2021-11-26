@@ -100,9 +100,18 @@ enum ExecMsg {
 typedef void (*TextureIdGenerate)(GLuint texName);
 typedef void (*CallbackFun)();
 
+enum State {
+    NO_SURFACE,
+    READY,
+    DESTROY,
+};
+
 class BaseRender {
 
 protected:
+
+    State currentState = NO_SURFACE;
+
     ANativeWindow *nwin;
     EglHelper *eglHelper;
 

@@ -1,5 +1,6 @@
 package com.zl.mediacodec
 
+import android.graphics.PixelFormat
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
 import android.media.MediaExtractor
@@ -7,8 +8,10 @@ import android.media.MediaFormat
 import android.os.Bundle
 import android.util.Log
 import android.view.Surface
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.zl.glnative.GLRenderer
+import com.zl.glnative.GLSurfaceCallback
 import com.zl.glnative.GLTextureListener
 import com.zl.glnative.getCurrentThreadInfo
 import com.zl.mediacodec.databinding.ActivityMp4Binding
@@ -42,7 +45,7 @@ class Mp4Activity : AppCompatActivity() {
                     Log.i(TAG, "onTextureIdGenerate: ${getCurrentThreadInfo()}")
                     surface = SurfaceTexture(textureId).apply {
                         setOnFrameAvailableListener {
-                            Log.i(TAG, "OnFrameAvailable: ${getCurrentThreadInfo()}")
+                            Log.i(TAG, "OnFrameAvailable: ${getCurrentThreadInfo()}, width:")
 //                        it.updateTexImage()
                             render.callNativeThread()
                             render.draw()
@@ -60,39 +63,20 @@ class Mp4Activity : AppCompatActivity() {
 
             }
         }
-        binding.mp4TextureView.surfaceTextureListener = GLTextureListener(render)
+        val textureFlag = true
+        if (textureFlag) {
+            binding.mp4TextureView.visibility = View.VISIBLE
+            binding.mp4SurfaceView.visibility = View.GONE
+            binding.mp4TextureView.surfaceTextureListener = GLTextureListener(render)
+            binding.mp4TextureView.isOpaque = true
+        } else {
+            binding.mp4TextureView.visibility = View.GONE
+            binding.mp4SurfaceView.visibility = View.VISIBLE
+            binding.mp4SurfaceView.holder.addCallback(GLSurfaceCallback(render))
+            binding.mp4SurfaceView.setZOrderOnTop(true)
+            binding.mp4SurfaceView.holder.setFormat(PixelFormat.TRANSPARENT)
+        }
 
-//        binding.mp4TextureView.surfaceTextureListener =
-//            object : TextureView.SurfaceTextureListener {
-//                override fun onSurfaceTextureAvailable(
-//                    surface: SurfaceTexture,
-//                    width: Int,
-//                    height: Int
-//                ) {
-//                    Log.i(TAG, "onSurfaceTextureAvailable: ")
-//                    thread {
-//                        decode(surface, width, height)
-//                    }
-//                }
-//
-//                override fun onSurfaceTextureSizeChanged(
-//                    surface: SurfaceTexture,
-//                    width: Int,
-//                    height: Int
-//                ) {
-//                    Log.i(TAG, "onSurfaceTextureSizeChanged: ")
-//                }
-//
-//                override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-//                    Log.i(TAG, "onSurfaceTextureDestroyed: ")
-//                    return true
-//                }
-//
-//                override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-//                    Log.d(TAG, "onSurfaceTextureUpdated: ")
-//                }
-//
-//            }
     }
 
     private fun decode(surface: SurfaceTexture) {
@@ -151,7 +135,8 @@ class Mp4Activity : AppCompatActivity() {
         decoder.stop()
         decoder.release()
         extractor.release()
-
+        this.surface?.release()
+        render.destroy()
     }
 
     private fun putBufferToCoder(
@@ -185,6 +170,5 @@ class Mp4Activity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         exit = true
-        surface?.release()
     }
 }

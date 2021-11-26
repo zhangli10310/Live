@@ -45,9 +45,15 @@ void BaseRender::run() {
         case INVALID:
             break;
         case CALL_BACK: {
+            if (currentState != READY) {
+                break;
+            }
             callback();
         }
         case RENDER: {
+            if (currentState != READY) {
+                break;
+            }
             onDraw();
             GLint ret = eglHelper->swapBuffers();
             // handle ret EGL_SUCCESS, EGL_CONTEXT_LOST
@@ -66,9 +72,11 @@ void BaseRender::run() {
                 printGLString("GL_VENDOR", GL_VENDOR);
                 printGLString("GL_VERSION", GL_VERSION);
                 printGLString("GL_EXTENSIONS", GL_EXTENSIONS);
+                currentState = READY;
                 onInit();
                 reset(eglHelper->surfaceWidth, eglHelper->surfaceHeight);
             } else {
+                currentState = NO_SURFACE;
                 LOGI("clear queue because surface changed");
                 queue->clear(RENDER);
             }
@@ -82,6 +90,7 @@ void BaseRender::run() {
             break;
         }
         case FINISH: {
+            currentState = DESTROY;
             LOGI("render start finish");
             eglHelper->destroy();
             delete eglHelper;

@@ -21,7 +21,7 @@ auto textureFragmentShader =
         "uniform samplerExternalOES sTexture;\n"
         "void main() {\n"
         "    vec4 rgb = texture2D(sTexture, v_texPosition);"
-        "    gl_FragColor = vec4(rgb.r, rgb.g, rgb.b, 0.3);\n"
+        "    gl_FragColor = vec4(rgb.r, rgb.g, rgb.b, 1);\n"
         "}\n";
 
 GLfloat vertexData[] = {
@@ -57,32 +57,47 @@ void TextureRender::onInit() {
 
 void TextureRender::renderMediacodec() const {
 //    surfaceTexture.updateTexImage();
+
+    // 下面是调整视口的方式
+    if (textureWidth > 0 && textureHeight > 0) {
+
+        if ((float) textureHeight / (float) currentHeight >
+            (float) textureWidth * 1.0f / (float) currentWidth) { // 按高适配
+            int width = (int)((float) textureWidth * (float) currentHeight / (float) textureHeight);
+            glViewport((currentWidth - width) / 2, 0, width, currentHeight);
+        } else {
+            int height = (int) ((float) textureHeight * (float) currentWidth / (float) textureWidth);
+            glViewport(0, (currentHeight - height) / 2, currentWidth, height);
+        }
+    }
     glUseProgram(program);
 
     glEnableVertexAttribArray(avPositionLoc);
 
     GLfloat *vData = vertexData;
-    if (textureHeight > 0 && textureWidth > 0) {
-        if ((float) textureHeight / (float) currentHeight >
-            (float) textureWidth * 1.0f / (float) currentWidth) { // 按高适配
-            float width = (float) textureWidth * (float) currentHeight / (float) textureHeight / (float) currentWidth;
-            vData = new GLfloat[]{
-                    -width, -1.0f,
-                    width, -1.0f,
-                    -width, 1.0f,
-                    width, 1.0f
-            };
-        } else {
-            float height = (float) textureHeight * (float) currentWidth / (float) textureWidth /
-                           (float) currentHeight;
-            vData = new GLfloat[]{
-                    -1.0f, -height,
-                    1.0f, -height,
-                    -1.0f, height,
-                    1.0f, height
-            };
-        }
-    }
+
+    // 下面是调整顶点的
+//    if (textureHeight > 0 && textureWidth > 0) {
+//        if ((float) textureHeight / (float) currentHeight >
+//            (float) textureWidth * 1.0f / (float) currentWidth) { // 按高适配
+//            float width = (float) textureWidth * (float) currentHeight / (float) textureHeight / (float) currentWidth;
+//            vData = new GLfloat[]{
+//                    -width, -1.0f,
+//                    width, -1.0f,
+//                    -width, 1.0f,
+//                    width, 1.0f
+//            };
+//        } else {
+//            float height = (float) textureHeight * (float) currentWidth / (float) textureWidth /
+//                           (float) currentHeight;
+//            vData = new GLfloat[]{
+//                    -1.0f, -height,
+//                    1.0f, -height,
+//                    -1.0f, height,
+//                    1.0f, height
+//            };
+//        }
+//    }
 
     glVertexAttribPointer(avPositionLoc, 2, GL_FLOAT, false, 8, vData);
     glEnableVertexAttribArray(afPositionLoc);
@@ -109,8 +124,9 @@ void TextureRender::onSizeChange(int width, int height) {
 }
 
 void TextureRender::onDraw() {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // renderMediacodec
     renderMediacodec();
 }
