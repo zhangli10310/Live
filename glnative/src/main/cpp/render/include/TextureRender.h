@@ -12,7 +12,8 @@ class TextureRender: public BaseRender {
 private:
     GLint program;
     GLint avPositionLoc;
-    GLint afPositionLoc;
+    GLint videoPositionLoc;
+    GLint alphaPositionLoc;
     GLint textureLoc;
 
     void renderMediacodec() const;

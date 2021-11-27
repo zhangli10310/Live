@@ -7,10 +7,13 @@
 
 auto textureVertexShader =
         "attribute vec4 av_Position;\n"
-        "attribute vec2 af_Position;\n"
+        "attribute vec2 video_Position;\n"
+        "attribute vec2 alpha_Position;\n"
         "varying vec2 v_texPosition;\n"
+        "varying vec2 v_alphaPosition;\n"
         "void main() {\n"
-        "    v_texPosition = af_Position;\n"
+        "    v_texPosition = video_Position;\n"
+        "    v_alphaPosition = alpha_Position;\n"
         "    gl_Position = av_Position;\n"
         "}\n";
 
@@ -18,10 +21,12 @@ auto textureFragmentShader =
         "#extension GL_OES_EGL_image_external : require\n"
         "precision mediump float;\n"
         "varying vec2 v_texPosition;\n"
+        "varying vec2 v_alphaPosition;\n"
         "uniform samplerExternalOES sTexture;\n"
         "void main() {\n"
-        "    vec4 rgb = texture2D(sTexture, v_texPosition);"
-        "    gl_FragColor = vec4(rgb.r, rgb.g, rgb.b, 0.5);\n"
+        "    vec4 alpha = texture2D(sTexture, v_alphaPosition);\n"
+        "    vec4 rgb = texture2D(sTexture, v_texPosition);\n"
+        "    gl_FragColor = vec4(rgb.r, rgb.g, rgb.b, alpha.r);\n"
         "}\n";
 
 GLfloat vertexData[] = {
@@ -33,15 +38,23 @@ GLfloat vertexData[] = {
 
 GLfloat textureData[] = {
         0.0f, 1.0f,
-        1.0f, 1.0f,
+        0.667f, 1.0f,
         0.0f, 0.0f,
+        0.667f, 0.0f
+};
+
+GLfloat alphaData[] = {
+        0.667f, 0.5f,
+        1.0f, 0.5f,
+        0.667f, 0.0f,
         1.0f, 0.0f
 };
 
 void TextureRender::onInit() {
     program = createProgram(textureVertexShader, textureFragmentShader);
     avPositionLoc = glGetAttribLocation(program, "av_Position");
-    afPositionLoc = glGetAttribLocation(program, "af_Position");
+    videoPositionLoc = glGetAttribLocation(program, "video_Position");
+    alphaPositionLoc = glGetAttribLocation(program, "alpha_Position");
     textureLoc = glGetUniformLocation(program, "sTexture");
 
     LOGI("before GenTextures, textureId: %d", textureId);
@@ -102,8 +115,11 @@ void TextureRender::renderMediacodec() const {
 //    }
 
     glVertexAttribPointer(avPositionLoc, 2, GL_FLOAT, false, 8, vData);
-    glEnableVertexAttribArray(afPositionLoc);
-    glVertexAttribPointer(afPositionLoc, 2, GL_FLOAT, false, 8, textureData);
+
+    glEnableVertexAttribArray(videoPositionLoc);
+    glVertexAttribPointer(videoPositionLoc, 2, GL_FLOAT, false, 8, textureData);
+    glEnableVertexAttribArray(alphaPositionLoc);
+    glVertexAttribPointer(alphaPositionLoc, 2, GL_FLOAT, false, 8, alphaData);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, textureId);
