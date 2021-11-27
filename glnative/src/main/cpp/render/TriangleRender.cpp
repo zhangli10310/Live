@@ -15,7 +15,7 @@ auto gVertexShader =
 auto gFragmentShader =
         "precision mediump float;\n"
         "void main() {\n"
-        "  gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n"
+        "  gl_FragColor = vec4(0.0, 1.0, 0.0, 0.1);\n"
         "}\n";
 
 void TriangleRender::onInit() {
@@ -29,13 +29,15 @@ void TriangleRender::onSizeChange(int width, int height) {
 
 void TriangleRender::onDraw() {
     LOGD("onDraw");
+    glClear(GL_COLOR_BUFFER_BIT);
+    sleep(1);
     static float grey;
-    usleep(200000);
+    sleep(1);
     grey += 0.01f;
     if (grey > 1.0f) {
         grey = 0.0f;
     }
-    glClearColor(grey, grey, grey, 1.0f);
+    glClearColor(grey, grey, grey, 0.5f);
     checkGlError("glClearColor");
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     checkGlError("glClear");

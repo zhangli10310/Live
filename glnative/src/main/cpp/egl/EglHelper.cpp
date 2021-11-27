@@ -23,10 +23,10 @@ void EglHelper::start() {
             EGL_BLUE_SIZE, 8,
             EGL_GREEN_SIZE, 8,
             EGL_RED_SIZE, 8,
-//            EGL_ALPHA_SIZE, 8,
-//            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-//            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-            EGL_NONE
+            EGL_ALPHA_SIZE, 8,
+            EGL_DEPTH_SIZE, 16,
+            EGL_STENCIL_SIZE, 0,
+            EGL_NONE,
     };
     int num_configs = 0;
     if (!eglChooseConfig(eglDisplay, config_attribs, &eglConfig, 1, &num_configs)) {

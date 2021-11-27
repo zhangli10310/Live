@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.PixelFormat
 import android.graphics.SurfaceTexture
 import android.opengl.GLSurfaceView
 import android.os.BatteryManager
@@ -17,6 +18,7 @@ import android.view.TextureView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.zl.glnative.databinding.ActivityGlBinding
+import com.zl.glnative.system.GLSurfaceRender
 import java.io.BufferedReader
 import java.io.DataInputStream
 import java.io.IOException
@@ -46,13 +48,22 @@ class GLActivity : AppCompatActivity() {
             Log.i(TAG, "onCreate: ")
         }
 
-        binding.surfaceView.holder.addCallback(GLSurfaceCallback(render.apply {
-            init()
-        }))
+        binding.surfaceView.apply {
+            setZOrderOnTop(true)
+            holder.setFormat(PixelFormat.TRANSPARENT)
+            holder.addCallback(GLSurfaceCallback(render.apply {
+                init()
+            }))
+        }
 
-//        binding.textureView.surfaceTextureListener = GLTextureListener(render.apply {
-//            init()
-//        })
+        binding.glView.apply {
+            setEGLContextClientVersion(2)
+            setEGLConfigChooser(8, 8, 8, 8, 16, 0)
+            holder.setFormat(PixelFormat.TRANSPARENT)
+            setZOrderOnTop(true)
+//            renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+            setRenderer(GLSurfaceRender())
+        }
 
     }
 

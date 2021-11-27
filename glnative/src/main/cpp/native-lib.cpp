@@ -81,6 +81,7 @@ Java_com_zl_glnative_GLRenderer_init(JNIEnv *env, jobject thiz) {
     LOGI("jni init,thread id:%d", std::this_thread::get_id());
     auto *render = new TextureRender();
     render->setRenderWhenDirty(true);
+//    auto *render = new TriangleRender();
     LOGI("set render %ld", (long) render);
     setRender(env, thiz, render);
 

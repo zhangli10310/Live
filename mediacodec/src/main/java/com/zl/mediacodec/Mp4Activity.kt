@@ -46,7 +46,6 @@ class Mp4Activity : AppCompatActivity() {
                     surface = SurfaceTexture(textureId).apply {
                         setOnFrameAvailableListener {
                             Log.i(TAG, "OnFrameAvailable: ${getCurrentThreadInfo()}, width:")
-//                        it.updateTexImage()
                             render.callNativeThread()
                             render.draw()
                         }
@@ -67,21 +66,21 @@ class Mp4Activity : AppCompatActivity() {
         if (textureFlag) {
             binding.mp4TextureView.visibility = View.VISIBLE
             binding.mp4SurfaceView.visibility = View.GONE
+            binding.mp4TextureView.isOpaque = false
             binding.mp4TextureView.surfaceTextureListener = GLTextureListener(render)
-            binding.mp4TextureView.isOpaque = true
         } else {
             binding.mp4TextureView.visibility = View.GONE
             binding.mp4SurfaceView.visibility = View.VISIBLE
-            binding.mp4SurfaceView.holder.addCallback(GLSurfaceCallback(render))
             binding.mp4SurfaceView.setZOrderOnTop(true)
             binding.mp4SurfaceView.holder.setFormat(PixelFormat.TRANSPARENT)
+            binding.mp4SurfaceView.holder.addCallback(GLSurfaceCallback(render))
         }
 
     }
 
     private fun decode(surface: SurfaceTexture) {
         val extractor = MediaExtractor()
-        val fd = assets.openFd("test.mp4")
+        val fd = assets.openFd("video.mp4")
         extractor.setDataSource(fd)
 
         var videoIndex = -1
