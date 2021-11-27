@@ -81,7 +81,7 @@ void TextureRender::renderMediacodec() const {
             int width = (int)((float) textureWidth * (float) currentHeight / (float) textureHeight);
             glViewport((currentWidth - width) / 2, 0, width, currentHeight);
         } else {
-            int height = (int) ((float) textureHeight * (float) currentWidth / (float) textureWidth);
+            int height = (int) ((float) textureHeight * (float) currentWidth / (float) textureWidth * 1.5f);
             glViewport(0, (currentHeight - height) / 2, currentWidth, height);
         }
     }
