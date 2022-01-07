@@ -4,6 +4,8 @@ import android.graphics.SurfaceTexture
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import android.view.Surface
 import com.zl.mediacodec.decode.datasource.DecoderDataSource
@@ -25,12 +27,22 @@ class VideoDecoder(
     private val extractor by lazy { MediaExtractor() }
     private var mediacodec: MediaCodec? = null
 
+    private var handler: Handler
+    val ht = HandlerThread("tag")
+    init {
+        ht.start()
+        handler = Handler(ht.looper)
+    }
+
     fun init() {
         decoderDataSource.setDataSource(extractor)
         ensureMediaType()
         val type = mime ?: return
         mediacodec = MediaCodec.createDecoderByType(type).apply {
             setCallback(object : MediaCodec.Callback() {
+                private var startTimeStamp = 0L
+                private var startTimeUs = 0L
+
                 override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
                     val inputBuffer = codec.getInputBuffer(index)
                     inputBuffer ?: return
@@ -52,7 +64,16 @@ class VideoDecoder(
                     index: Int,
                     info: MediaCodec.BufferInfo
                 ) {
-                    Log.i(TAG, "onOutputBufferAvailable: ${info.presentationTimeUs}")
+                    val timeUs = info.presentationTimeUs
+                    if (timeUs == 0L) {
+                        startTimeStamp = System.nanoTime()
+                    }
+                    val clientTimeGap = (System.nanoTime() - startTimeStamp)/1000
+                    val sampleTimeGap = timeUs - startTimeUs
+                    Log.i(TAG, "${Thread.currentThread()},onOutputBufferAvailable: $sampleTimeGap, $clientTimeGap")
+                    if (sampleTimeGap > clientTimeGap) {
+                        Thread.sleep((sampleTimeGap - clientTimeGap) / 1000)
+                    }
                     codec.releaseOutputBuffer(index, true)
                 }
 
@@ -64,7 +85,7 @@ class VideoDecoder(
 
                 }
 
-            })
+            }, handler)
             configure(mediaFormat, Surface(surface), null, 0)
         }
     }
@@ -105,6 +126,7 @@ class VideoDecoder(
         mediacodec = null
         extractor.release()
         surface.release()
+        ht.quit()
     }
 
     fun interface OnParseVideoSize {

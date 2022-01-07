@@ -2,3 +2,4 @@ rootProject.name = "Live"
 include ':app'
 include ':glnative'
 include ':mediacodec'
+include ':livepush'

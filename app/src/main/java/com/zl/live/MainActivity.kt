@@ -3,9 +3,9 @@ package com.zl.live
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.TextView
 import com.zl.glnative.GLActivity
 import com.zl.live.databinding.ActivityMainBinding
+import com.zl.livepush.PushActivity
 import com.zl.mediacodec.Mp4Activity
 
 class MainActivity : AppCompatActivity() {
@@ -24,6 +24,11 @@ class MainActivity : AppCompatActivity() {
         binding.toMp4.setOnClickListener {
             startActivity(Intent(this, Mp4Activity::class.java))
         }
+        binding.toPush.setOnClickListener {
+            startActivity(Intent(this, PushActivity::class.java))
+        }
+
+
     }
 
 }
